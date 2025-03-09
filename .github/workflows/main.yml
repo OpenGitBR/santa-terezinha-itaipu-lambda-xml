@@ -1,0 +1,56 @@
+name: Deploy Lambda
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt -t ./
+
+    - name: Zip files
+      run: |
+          zip -r lambda-package.zip . -x "*.git*" "*__pycache__*" "*.github*"
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: sa-east-1
+
+    # - name: Deploy Lambda Function with Sentry Layer
+    #   run: |
+    #     aws lambda update-function-configuration \
+    #       --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+    #       --layers arn:aws:lambda:sa-east-1:943013980633:layer:SentryPythonServerlessSDK:133
+
+    # - name: Update Environment Variables
+    #   run: |
+    #     aws lambda update-function-configuration \
+    #       --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }}  \
+    #       --environment Variables="{ \
+    #           SENTRY_DSN=${{ secrets.SENTRY_DSN }}, \
+    #           SENTRY_INITIAL_HANDLER=lambda_function.lambda_handler, \
+    #           SENTRY_TRACES_SAMPLE_RATE=1.0 \
+    #       }"
+
+    - name: Deploy Lambda Function
+      run: |
+          aws lambda update-function-code \
+            --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
+            --zip-file fileb://lambda-package.zip
