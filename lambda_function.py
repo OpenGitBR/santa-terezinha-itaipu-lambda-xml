@@ -19,7 +19,7 @@ def get_db_connection():
         port=os.getenv("DB_PORT")
     )
 
-# Função principal do Lambda
+# Função principal do Lambdaa
 def lambda_handler(event, context):
     s3_client = boto3.client('s3')
 
